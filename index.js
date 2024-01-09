@@ -3,7 +3,11 @@ import dotenv from "dotenv";
 import express from "express";
 import mongoose from "mongoose";
 import Student from "./models/Student.js";
+import Allumni from "./models/Allumni.js";
 import studentsRoute from "./routes/students.js";
+import allumniRoute from "./routes/allumni.js";
+
+
 
 const app = express();
 dotenv.config();
@@ -34,6 +38,9 @@ app.get("/", (req, res) => {
 app.use(express.json());
 
 app.use("/api/students", studentsRoute);
+
+app.use("/api/allumni", allumniRoute);
+
 
 //FOR PAGINATION AND SEARCH FILTER
 app.get("/paginated", async (req, res) => {
@@ -66,6 +73,38 @@ app.get("/paginated", async (req, res) => {
   });
 });
 
+
+// PAGINATED FOR ALLUMNI
+
+app.get("/paginatedAllumni", async (req, res) => {
+  const { name, phone, session, page = 1, pageSize = 2 } = req.query;
+
+  let results = await Allumni.find({});
+
+  if (name) {
+    results = results.filter((item) =>
+      item.name.toLocaleLowerCase().includes(name.toLocaleLowerCase())
+    );
+  }
+  if (phone) {
+    results = results.filter((item) => item.phone === phone);
+  }
+  if (session) {
+    results = results.filter((item) => item.session === session);
+  }
+
+  const startIndex = (page - 1) * pageSize;
+  const endIndex = startIndex + parseInt(pageSize);
+  const paginatedResult = results.slice(startIndex, endIndex);
+
+  res.status(200).json({
+    totalItem: results.length,
+    totaPage: Math.ceil(results.length / pageSize),
+    currentPage: parseInt(page),
+    pageSize: parseInt(pageSize),
+    rows: paginatedResult,
+  });
+});
 
 
 //app listen
